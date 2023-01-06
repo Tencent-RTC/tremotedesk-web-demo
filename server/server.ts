@@ -29,12 +29,13 @@ app.post("/token", async (req, res) => {
     let userid = req.body.userid;
     let role = req.body.role;
     let expire = req.body.expire || 3600 * 24;
+    expire = Math.floor(Date.now() / 1000) + expire;
 
     let data = {
         appkey: config.appkey,
         userid: userid,
         role: role,
-        expire: expire
+        expire: expire 
     };
 
     let token: string = jwt.encode(data, config.secret);
