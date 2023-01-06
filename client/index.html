@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <title> RemoteDesk - Peer </title>
+  <style type="text/css">
+    video {
+      max-width: 100%;
+    }
+    .room {
+      cursor: pointer;
+    }
+    div.select {
+      display: inline-block;
+      margin: 0 0 1em 0;
+    }
+  </style>
+
+  <script type="module">
+
+    import { RCEngine, RemoteAudioTrack, RemoteVideoTrack } from 'rc-sdk-v2';
+
+
+    window.localStorage.setItem('debug', '*WARN* *ERROR* *DEBUG*');
+    RCEngine.setEnv('test');
+    let appkey = '';
+    let roomid = '';
+    let userid = Math.random().toString(36).substring(7);
+    let hostuserid = '';
+    let localVideo = null;
+    let remoteVideo = null;
+    let remoteStream = new MediaStream();
+    let rtrcClient = null;
+    const role = 'peer';
+
+
+    async function join() {
+
+      appkey = document.querySelector('#appkey-input').value;
+      if (appkey) {
+        document.querySelector('#appkey-place').innerText = 'appkey:' + appkey;
+      } else {
+        alert('Please enter appkey');
+        return;
+      }
+      roomid = document.querySelector('#roomid-input').value;
+      if (roomid) {
+        document.querySelector('#roomid-place').innerText = 'roomid:' + roomid;
+      } else {
+        alert('Please enter roomid');
+        return;
+      }
+
+
+      // 不要再线上使用， 请从服务端拿token， 此api仅供测试后续会去掉
+      const token = await rtrcClient.generateTestToken({
+        appkey: appkey,
+        roomid: roomid,
+        userid: userid,
+        role: role
+      });
+
+
+      rtrcClient.on('userjoin', (user) => {
+        console.log('user join', user);
+        hostuserid = user.userid;
+      });
+      rtrcClient.on('userleave', (user) => {
+        console.log('user leave', user);
+      });
+
+
+      rtrcClient.on(RCEngine.JoinEvent, async () => {
+
+      });
+
+
+      rtrcClient.on(RCEngine.SignalConnDisconnect, async (error) => {
+        // 信令断开，重新进房
+        setTimeout(() => {
+          rtrcClient.join(appkey, roomid, userid, token, role);
+        }, 3000);
+      });
+
+
+      rtrcClient.on('track', async (track) => {
+        track.play(remoteVideo);
+      });
+
+      
+      try {
+        //appkey: string, roomid: string, userid: string, token: string, role: RCEngineRole
+        await rtrcClient.join(appkey, roomid, userid, token, role);
+      } catch (e) {
+        console.error('join room failed', e);
+      }
+    }
+
+
+    async function leave() {
+      if (rtrcClient != null) {
+        rtrcClient.leave();
+      }
+    }
+
+    async function closeEngine() {
+      if (rtrcClient != null) {
+        rtrcClient.close();
+        rtrcClient = null;
+        hostuserid = '';
+      }
+    }
+
+    async function connectToHost() {
+      if (role !== 'peer') {
+        alert('only peer can connect to host');
+        return;
+      }
+
+      if (hostuserid === '') {
+        alert('host does not join room yet');
+        return;
+      }
+      await rtrcClient.connectToHost(hostuserid);
+      rtrcClient.attachInput(remoteVideo);
+    }
+
+    async function init() {
+      localVideo = document.getElementById('local_video');
+      remoteVideo = document.getElementById('remote_video');
+      rtrcClient = new RCEngine({});
+    }
+
+    window.init = init;
+    window.join = join;
+    window.connectToHost = connectToHost;
+    window.closeEngine = closeEngine;
+  </script>
+</head>
+<body onload="init();">
+  
+  <h1>RC Demo</h1>
+  <p id="roomid-place"></p>
+  <br />
+  <p id="appkey-place"></p>
+  <br />
+  <div id="conference">
+    <div>
+      <form>
+        <label for="appkey-input">appkey</label>
+        <input type="text" id="appkey-input" value="" />
+        <span id="state_span"> </span>
+        <br />
+        <label for="roomid-input">roomid</label>
+        <input type="text" id="roomid-input" value="123456" />
+        <span id="state_span"> </span>
+      </form>
+      <br />
+      <button onclick="join();">Join</button>
+      <button onclick="connectToHost();">ConnecToHost</button>
+      <button onclick="closeEngine();">close</button>
+      <span id="state_span"> </span>
+    </div>
+    Remote videos:
+    <br />
+    <div id="remote_container">
+      <video id="remote_video" playsinline autoplay muted></video>
+    </div>
+    <br />
+  </div>
+</body>
+</html>
