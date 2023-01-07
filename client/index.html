@@ -51,16 +51,8 @@
         return;
       }
 
-      // 不要再线上使用， 请从服务端拿token， 此api仅供测试后续会去掉
-      // const token = await rtrcClient.generateTestToken({
-      //   appkey: appkey,
-      //   roomid: roomid,
-      //   userid: userid,
-      //   role: role
-      // });
-
       let res = await fetch('http://127.0.0.1:3000/token', {
-            method: 'post',
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               roomid: roomid,
@@ -69,6 +61,8 @@
               expire: 3600 * 24  // 过期时间 
             })
       });
+
+      console.dir(res);
 
       let ret = await res.json();
 
@@ -174,7 +168,7 @@
       <button onclick="closeEngine();">close</button>
       <span id="state_span"> </span>
     </div>
-    Remote videos:
+    Remote video:
     <br />
     <div id="remote_container">
       <video id="remote_video" playsinline autoplay muted></video>

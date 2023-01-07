@@ -12,6 +12,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
+app.use(cors())
 
 
 app.get("/peer", async (req, res) => {
@@ -31,12 +32,16 @@ app.post("/token", async (req, res) => {
     let expire = req.body.expire || 3600 * 24;
     expire = Math.floor(Date.now() / 1000) + expire;
 
+    console.log(req.body);
+
     let data = {
         appkey: config.appkey,
         userid: userid,
         role: role,
         expire: expire 
     };
+
+    console.log(data);
 
     let token: string = jwt.encode(data, config.secret);
 
@@ -48,6 +53,9 @@ app.post("/token", async (req, res) => {
 });
 
 
+if (!config.appkey || !config.secret ) {
+    throw "appkey and secret can not be empty";
+}
 
 app.listen(3000, () => {
   console.log("Server is running on port 3000");
