@@ -29,9 +29,12 @@
     let hostuserid = '';
     let localVideo = null;
     let remoteVideo = null;
+    let localstream = null;
+    let localAudioTrack = null;
     let remoteStream = new MediaStream();
     let rtrcClient = null;
     const role = 'peer';
+
 
 
     async function join() {
@@ -77,7 +80,22 @@
       });
 
 
+      //  初始化音频
+      try {
+        localstream = await navigator.mediaDevices.getUserMedia({
+          audio: true
+        });
+      } catch (error) {
+        alert('音频设备初始化失败，请检查你的麦克风 或者 请给与音频权限');
+      }
+
+
       rtrcClient.on(RCEngine.JoinEvent, async () => {
+        localAudioTrack = await rtrcClient.createLocalAudioTrack(userid, localstream.getAudioTracks()[0]);
+        // 开启音频 
+        await rtrcClient.enableLocalTrack(localAudioTrack, true);
+        // 关闭音频
+        //await rtrcClient.enableLocalTrack(localAudioTrack, false);
 
       });
 
@@ -93,7 +111,7 @@
       rtrcClient.on('track', async (track) => {
         track.play(remoteVideo);
       });
-
+      
 
       try {
         //appkey: string, roomid: string, userid: string, token: string, role: RCEngineRole
@@ -171,7 +189,7 @@
     Remote video:
     <br />
     <div id="remote_container">
-      <video id="remote_video" playsinline autoplay muted></video>
+      <video id="remote_video" playsinline autoplay></video>
     </div>
     <br />
   </div>
