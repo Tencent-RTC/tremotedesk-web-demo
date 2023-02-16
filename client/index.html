@@ -91,6 +91,7 @@
 
 
       rtrcClient.on(RCEngine.JoinEvent, async () => {
+        
         localAudioTrack = await rtrcClient.createLocalAudioTrack(userid, localstream.getAudioTracks()[0]);
         // 开启音频 
         await rtrcClient.enableLocalTrack(localAudioTrack, true);
